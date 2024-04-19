@@ -15,4 +15,6 @@ public class NewTaskReq {
     private String description;
 
     private Integer stepNumber;
+
+    private String step_config; // 所有步骤配置的json string
 }

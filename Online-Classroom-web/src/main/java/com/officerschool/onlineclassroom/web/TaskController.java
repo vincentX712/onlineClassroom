@@ -33,7 +33,7 @@ public class TaskController {
     @RequestMapping(value = "/taskList", method = RequestMethod.GET)
     public CommonResult taskList(TaskPageReq req) {
         try {
-            return CommonResult.createOK();
+            return CommonResult.createOK(taskService.taskList(req));
         } catch (Exception e) {
             logger.error("TaskController#tasks error", e);
             return CommonResult.fail(ErrorCodeEnum.SERVER_ERROR);
@@ -60,7 +60,7 @@ public class TaskController {
             if (StringUtils.isBlank(taskId)) {
                 return CommonResult.fail(ErrorCodeEnum.REQUEST_PARAM_NULL);
             }
-            return CommonResult.createOK();
+            return CommonResult.createOK(taskService.deleteTask(taskId));
         } catch (Exception e) {
             logger.error("TaskController#deleteTask error", e);
             return CommonResult.fail(ErrorCodeEnum.SERVER_ERROR);
@@ -70,7 +70,10 @@ public class TaskController {
     @RequestMapping(value = "/taskDetail", method = RequestMethod.GET)
     public CommonResult taskDetail(String taskId) {
         try {
-            return CommonResult.createOK();
+            if (StringUtils.isBlank(taskId)) {
+                return CommonResult.fail(ErrorCodeEnum.REQUEST_PARAM_NULL);
+            }
+            return CommonResult.createOK(taskService.taskDetail(taskId));
         } catch (Exception e) {
             logger.error("TaskController#taskDetail error", e);
             return CommonResult.fail(ErrorCodeEnum.SERVER_ERROR);

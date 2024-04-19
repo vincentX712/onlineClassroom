@@ -22,6 +22,12 @@ public class TaskDO {
 
     private Integer stepNumber;
 
+    private String stepConfig; // 所有步骤配置的json字符串
+
+    private String answer; // 答案
+
+    private Integer state;
+
     private Timestamp createTime;
 
     private Timestamp updateTime;
