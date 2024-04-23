@@ -288,5 +288,24 @@ public class FileUtil {
         return fileNames;
     }
 
+    /**
+     * 列举指定目录下的所有目录名（不递归子目录）
+     * @param path
+     * @return
+     */
+    public static List<String> listAllDirectory(String path) {
+        File dir = new File(path);
+        if (!dir.exists() || !dir.isDirectory())
+            return null;
+
+        List<String> dirNames = new ArrayList<>();
+        File[] entries = dir.listFiles(File::isDirectory);
+        if (entries == null)
+            return null;
+        for (File entry : entries)
+            dirNames.add(entry.getName());
+        return dirNames;
+    }
+
 }
 

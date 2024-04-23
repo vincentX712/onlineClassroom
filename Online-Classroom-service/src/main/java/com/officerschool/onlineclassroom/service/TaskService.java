@@ -19,6 +19,7 @@ import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 import java.sql.Timestamp;
+import java.text.DecimalFormat;
 import java.util.*;
 
 /**
@@ -138,36 +139,40 @@ public class TaskService {
         String answer = taskDO.getAnswer();
         Map<String, String> answerMap = parseJsonToMap(answer);
 
-
         // 2. 获取学生提交文件内容，并与标准答案进行对比
-        String path = "/Users/wenchaoxiang/workspace/onlineClassroom/submit/";
-        List<String> studentFiles = FileUtil.listAllFile(path, false);
-        if (studentFiles == null || studentFiles.isEmpty())
+        String path = "submit/";
+        List<String> dirList = FileUtil.listAllDirectory(path); // 目录名为学生信息（学号）
+        if (dirList == null || dirList.isEmpty())
             return taskDetailResp;
 
         JSONObject completionStatus = new JSONObject();
-        for (String studentFile : studentFiles) { //  Todo:计算完成后将文件的更新时间存入mysql或缓存，避免重复计算
-            if (!studentFile.endsWith(".cfg")) // 只识别cfg文件
-                continue;
-            String studentAnswer = FileUtil.readFileToString(path + studentFile);
-            if (StringUtils.isBlank(studentAnswer))
-                continue;
+        JSONObject completionItem = new JSONObject();
+        Map<String, String> stepPercent = new HashMap<>();
+        for (String dir : dirList) { // 遍历学生目录
+            String dirPath = path + dir + "/";
+            List<String> studentFiles = FileUtil.listAllFile(path + dir, false); // 文件名为每个学生的提交文件，每个step一个文件
+            if (studentFiles == null || studentFiles.isEmpty())
+                return taskDetailResp;
 
-            studentAnswer = null;
-//            System.gc();
+            for (String studentFile : studentFiles) { // 遍历学生目录下的配置文件  Todo:计算完成后将文件的更新时间存入mysql或缓存，避免重复计算
+                if (!studentFile.endsWith(".cfg")) // 只识别cfg文件
+                    continue;
+                String studentAnswer = FileUtil.readFileToString(dirPath + studentFile);
+                if (StringUtils.isBlank(studentAnswer))
+                    continue;
 
-            JSONObject completionItem = new JSONObject();
-            completionItem.put("total_percent", "25%");
-            Map<String, String> stepPercent = new HashMap<>();
-            stepPercent.put("step1", "10%");
-            stepPercent.put("step2", "50%");
-            stepPercent.put("step3", "0%");
+                String stepName = studentFile.substring(0, studentFile.indexOf("."));
+                stepPercent.put(stepName, computeCompletionStatus(studentAnswer, answerMap.get(stepName))); // 计算完成度
+
+//                studentAnswer = null;
+//                System.gc();
+            }
             completionItem.put("step_percent", stepPercent);
-
-            String studentNumber = studentFile.substring(0, studentFile.indexOf("."));
-            completionStatus.put(studentNumber, completionItem);
+            completionItem.put("total_percent", totalPercent(stepPercent));
+            taskDetailResp.setCompletionStatus(completionStatus);
+            completionStatus.put(dir, completionItem);
         }
-        taskDetailResp.setCompletionStatus(completionStatus);
+
         return taskDetailResp;
     }
 
@@ -181,5 +186,69 @@ public class TaskService {
             map.put(object.getString("num"), object.getString("cfg"));
         }
         return map;
+    }
+
+    private String computeCompletionStatus(String studentAnswer, String answer) {
+        if (StringUtils.isBlank(answer))
+            return null;
+        if (StringUtils.isBlank(studentAnswer))
+            return "0";
+
+        List<String> answerList = extractParagraphs(answer);
+        List<String> studentAnswerList = extractParagraphs(studentAnswer);
+        if (answerList.isEmpty() || studentAnswerList.isEmpty())
+            return "0";
+
+        int hit = 0;
+        for (String answerItem : answerList) {
+            // 将 answerItem 按行分割为 List<String>
+            List<String> targetLines = Arrays.asList(answerItem.split("\\r?\\n"));
+
+            // 使用 containsAll() 方法判断是否存在包含所有行的段落
+            boolean isParagraphFound = studentAnswerList.stream()
+                    .map(paragraph -> Arrays.asList(paragraph.split("\\r?\\n")))
+                    .anyMatch(lines -> lines.containsAll(targetLines));
+
+            if (isParagraphFound)
+                hit++;
+        }
+
+        DecimalFormat df = new DecimalFormat("0.00");
+        return df.format(hit / (double) answerList.size());
+    }
+
+    private List<String> extractParagraphs(String textContent) {
+        List<String> paragraphs = new ArrayList<>();
+        StringBuilder currentParagraph = new StringBuilder();
+
+        String[] lines = textContent.split("\\r?\\n"); // 分割文本为行数组，考虑 Windows（\r\n）和 Unix（\n）换行符
+        for (String line : lines) {
+            if (line.equals("#")) { // 检查是否为单独的 '#' 行
+                if (currentParagraph.length() > 0) { // 添加当前段落到列表并清空
+                    paragraphs.add(currentParagraph.toString().trim());
+                    currentParagraph.setLength(0);
+                }
+            } else {
+                currentParagraph.append(line).append("\n"); // 非 '#' 行，追加到当前段落
+            }
+        }
+
+        // 处理可能遗留的最后一段内容
+        if (currentParagraph.length() > 0) {
+            paragraphs.add(currentParagraph.toString().trim());
+        }
+
+        return paragraphs;
+    }
+
+    private String totalPercent(Map<String, String> stepPercent) {
+        if (stepPercent == null || stepPercent.isEmpty())
+            return "0";
+        double total = stepPercent.values().stream()
+                .mapToDouble(Double::parseDouble)
+                .sum();
+
+        DecimalFormat df = new DecimalFormat("0.00");
+        return df.format(total/stepPercent.size());
     }
 }
