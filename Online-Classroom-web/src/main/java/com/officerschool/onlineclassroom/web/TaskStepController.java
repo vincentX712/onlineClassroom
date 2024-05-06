@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * @author : create by xiangwenchao@zhejianglab.com
+ * @author : create by anyuxin
  * @version : v1.0
  * @date : 4/16/24
  */

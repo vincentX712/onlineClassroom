@@ -3,7 +3,7 @@ package com.officerschool.onlineclassroom.common.models;
 import com.officerschool.onlineclassroom.common.enums.ErrorCodeEnum;
 
 /**
- * @author : create by xiangwenchao@zhejianglab.com
+ * @author : create by anyuxin
  * @version : v1.0
  * @date : 4/15/24
  */

@@ -1,7 +1,7 @@
 package com.officerschool.onlineclassroom.service.utils;
 
 /**
- * @author : create by xiangwenchao@zhejianglab.com
+ * @author : create by anyuxin
  * @version : v1.0
  * @date : 4/19/24
  */
