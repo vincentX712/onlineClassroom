@@ -19,7 +19,7 @@ public class TaskDTO {
 
     private Integer stepNumber;
 
-    private String stepConfig; // 所有步骤配置的json字符串
+    private Integer state; // 所有步骤配置的json字符串
 
     private Timestamp createTime;
 

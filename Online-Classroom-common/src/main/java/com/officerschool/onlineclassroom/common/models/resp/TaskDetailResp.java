@@ -19,7 +19,7 @@ public class TaskDetailResp {
 
     private Integer stepNumber;
 
-    private String stepConfig;
+    private String answer;
 
     private JSONObject completionStatus; // 学生完成情况
 }

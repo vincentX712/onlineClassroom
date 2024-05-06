@@ -67,7 +67,7 @@ public class TaskService {
             taskDTO.setName(taskDO.getName());
             taskDTO.setDescription(taskDO.getDescription());
             taskDTO.setStepNumber(taskDO.getStepNumber());
-            taskDTO.setStepConfig(taskDO.getStepConfig());
+            taskDTO.setState(taskDO.getState());
             taskDTO.setCreateTime(taskDO.getCreateTime());
             resList.add(taskDTO);
         }
@@ -104,7 +104,7 @@ public class TaskService {
         taskDetailResp.setTaskName(taskDO.getName());
         taskDetailResp.setTaskDescription(taskDO.getDescription());
         taskDetailResp.setStepNumber(taskDO.getStepNumber());
-        taskDetailResp.setStepConfig(taskDO.getStepConfig());
+        taskDetailResp.setAnswer(taskDO.getAnswer());
 
 //        JSONArray answerArray = new JSONArray();
 //        String step1Aaswer = "#\n" +
@@ -146,9 +146,9 @@ public class TaskService {
             return taskDetailResp;
 
         JSONObject completionStatus = new JSONObject();
-        JSONObject completionItem = new JSONObject();
-        Map<String, String> stepPercent = new HashMap<>();
         for (String dir : dirList) { // 遍历学生目录
+            JSONObject completionItem = new JSONObject();
+            Map<String, String> stepPercent = new HashMap<>();
             String dirPath = path + dir + "/";
             List<String> studentFiles = FileUtil.listAllFile(path + dir, false); // 文件名为每个学生的提交文件，每个step一个文件
             if (studentFiles == null || studentFiles.isEmpty())
@@ -168,11 +168,10 @@ public class TaskService {
 //                System.gc();
             }
             completionItem.put("step_percent", stepPercent);
-            completionItem.put("total_percent", totalPercent(stepPercent));
+            completionItem.put("total_percent", totalPercent(stepPercent,taskDetailResp.getStepNumber()));
             taskDetailResp.setCompletionStatus(completionStatus);
             completionStatus.put(dir, completionItem);
         }
-
         return taskDetailResp;
     }
 
@@ -189,6 +188,7 @@ public class TaskService {
     }
 
     private String computeCompletionStatus(String studentAnswer, String answer) {
+
         if (StringUtils.isBlank(answer))
             return null;
         if (StringUtils.isBlank(studentAnswer))
@@ -196,14 +196,15 @@ public class TaskService {
 
         List<String> answerList = extractParagraphs(answer);
         List<String> studentAnswerList = extractParagraphs(studentAnswer);
+
         if (answerList.isEmpty() || studentAnswerList.isEmpty())
             return "0";
 
         int hit = 0;
         for (String answerItem : answerList) {
+            System.out.println("answerList:"+answerItem);
             // 将 answerItem 按行分割为 List<String>
             List<String> targetLines = Arrays.asList(answerItem.split("\\r?\\n"));
-
             // 使用 containsAll() 方法判断是否存在包含所有行的段落
             boolean isParagraphFound = studentAnswerList.stream()
                     .map(paragraph -> Arrays.asList(paragraph.split("\\r?\\n")))
@@ -212,7 +213,6 @@ public class TaskService {
             if (isParagraphFound)
                 hit++;
         }
-
         DecimalFormat df = new DecimalFormat("0.00");
         return df.format(hit / (double) answerList.size());
     }
@@ -241,7 +241,7 @@ public class TaskService {
         return paragraphs;
     }
 
-    private String totalPercent(Map<String, String> stepPercent) {
+    private String totalPercent(Map<String, String> stepPercent,Integer stepNum) {
         if (stepPercent == null || stepPercent.isEmpty())
             return "0";
         double total = stepPercent.values().stream()
@@ -249,6 +249,6 @@ public class TaskService {
                 .sum();
 
         DecimalFormat df = new DecimalFormat("0.00");
-        return df.format(total/stepPercent.size());
+        return df.format(total/stepNum);
     }
 }
